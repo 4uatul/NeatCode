@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Refactor Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --success: #4cc9f0;
+            --border: #e1e8ed;
+            --shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(120deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 2.2rem;
+        }
+        
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            padding: 30px;
+        }
+        
+        .input-section {
+            margin-bottom: 25px;
+        }
+        
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .language-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .language-selector label {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: white;
+            font-size: 14px;
+            color: var(--dark);
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+        
+        .code-input {
+            width: 100%;
+            min-height: 300px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            resize: vertical;
+            background-color: #fafbfc;
+            transition: border-color 0.3s;
+            line-height: 1.5;
+        }
+        
+        .code-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+        
+        .file-upload {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .file-label {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        
+        .file-label:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-name {
+            color: var(--gray);
+            font-style: italic;
+        }
+        
+        .actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 25px;
+        }
+        
+        .refactor-btn {
+            background: linear-gradient(120deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+        }
+        
+        .refactor-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        .refactor-btn:active {
+            transform: translateY(0);
+        }
+        
+        .refactor-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .output-section {
+            margin-top: 40px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .output-header h2 {
+            color: var(--dark);
+            font-weight: 600;
+        }
+        
+        .copy-btn {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+        }
+        
+        .copy-btn:hover {
+            background-color: #3ab0d6;
+        }
+        
+        .code-output {
+            width: 100%;
+            min-height: 300px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            background-color: #fafbfc;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+        }
+        
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 8px;
+            }
+            
+            header {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .code-input, .code-output {
+                min-height: 250px;
+                font-size: 14px;
+            }
+            
+            .input-header, .output-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NeatCode - Code Refactor Tool</h1>
+            <p class="subtitle">Paste your code or upload a file to refactor</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="input-section">
+                <div class="input-header">
+                    <h2>Input Code</h2>
+                    <div class="language-selector">
+                        <label for="language-select"><i class="fas fa-code"></i> Language:</label>
+                        <select id="language-select">
+                            <option value="auto">Auto-detect</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="python">Python</option>
+                            <option value="java">Java</option>
+                            <option value="cpp">C++</option>
+                            <option value="csharp">C#</option>
+                            <option value="php">PHP</option>
+                            <option value="html">HTML</option>
+                            <option value="css">CSS</option>
+                            <option value="sql">SQL</option>
+                            <option value="ruby">Ruby</option>
+                            <option value="swift">Swift</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <textarea class="code-input" placeholder="Paste your code here..."></textarea>
+                
+                <div class="file-upload">
+                    <label for="file-input" class="file-label">
+                        <i class="fas fa-file-upload"></i>
+                        Upload Code File
+                    </label>
+                    <input type="file" id="file-input" class="file-input" accept=".txt,.js,.py,.java,.cpp,.c,.cs,.php,.html,.css,.json,.xml,.rb,.swift">
+                    <span class="file-name">No file selected</span>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button class="refactor-btn">
+                    <i class="fas fa-magic"></i>
+                    Refactor Code
+                </button>
+                <button class="download-btn" id="downloadSample">
+                    <i class="fas fa-download"></i>
+                    Download Sample
+                </button>
+            </div>
+
+            <div class="output-section">
+                <div class="output-header">
+                    <h2>Refactored Code</h2>
+                    <button class="copy-btn">
+                        <i class="far fa-copy"></i>
+                        Copy to Clipboard
+                    </button>
+                </div>
+                <div class="code-output"></div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>NeatCode - Code Refactor Tool &copy; 2025 | Clean, efficient, and beautiful code refactoring</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('file-input');
+            const fileName = document.querySelector('.file-name');
+            const codeInput = document.querySelector('.code-input');
+            const languageSelect = document.getElementById('language-select');
+            const refactorBtn = document.querySelector('.refactor-btn');
+            const outputSection = document.querySelector('.output-section');
+            const codeOutput = document.querySelector('.code-output');
+            const copyBtn = document.querySelector('.copy-btn');
+            
+            // Handle file upload
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    fileName.textContent = this.files[0].name;
+                    
+                    // Try to detect language from file extension
+                    const extension = this.files[0].name.split('.').pop().toLowerCase();
+                    detectLanguageFromExtension(extension);
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        codeInput.value = e.target.result;
+                    };
+                    reader.readAsText(this.files[0]);
+                } else {
+                    fileName.textContent = 'No file selected';
+                }
+            });
+            
+            // Detect language from file extension
+            function detectLanguageFromExtension(ext) {
+                const languageMap = {
+                    'js': 'javascript',
+                    'py': 'python',
+                    'java': 'java',
+                    'cpp': 'cpp',
+                    'c': 'cpp',
+                    'cs': 'csharp',
+                    'php': 'php',
+                    'html': 'html',
+                    'css': 'css',
+                    'sql': 'sql',
+                    'rb': 'ruby',
+                    'swift': 'swift'
+                };
+                
+                if (languageMap[ext]) {
+                    languageSelect.value = languageMap[ext];
+                }
+            }
+            
+            // Handle refactor button click
+            refactorBtn.addEventListener('click', function() {
+                const code = codeInput.value.trim();
+                const language = languageSelect.value;
+                
+                if (code === '') {
+                    alert('Please enter or upload some code to refactor.');
+                    return;
+                }
+                
+                // Show loading state
+                refactorBtn.disabled = true;
+                refactorBtn.innerHTML = `
+                    <i class="fas fa-spinner spinner"></i>
+                    Refactoring...
+                `;
+                
+                // Simulate processing delay
+                setTimeout(() => {
+                    // This is a simple simulation - in reality, you would have actual refactoring logic
+                    const refactoredCode = simulateRefactoring(code, language);
+                    
+                    codeOutput.textContent = refactoredCode;
+                    outputSection.style.display = 'block';
+                    
+                    // Scroll to output
+                    outputSection.scrollIntoView({ behavior: 'smooth' });
+                    
+                    // Reset button
+                    refactorBtn.disabled = false;
+                    refactorBtn.innerHTML = `
+                        <i class="fas fa-magic"></i>
+                        Refactor Code
+                    `;
+                }, 1500);
+            });
+            
+            // Handle copy button click
+            copyBtn.addEventListener('click', function() {
+                const textToCopy = codeOutput.textContent;
+                
+                if (textToCopy.trim() === '') {
+                    alert('No code to copy!');
+                    return;
+                }
+                
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        // Visual feedback
+                        const originalText = copyBtn.innerHTML;
+                        copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                        copyBtn.style.backgroundColor = '#2ecc71';
+                        
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalText;
+                            copyBtn.style.backgroundColor = '';
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                        alert('Failed to copy code to clipboard');
+                    });
+            });
+            
+            // Simple simulation of refactoring - in reality this would be much more complex
+            function simulateRefactoring(code, language) {
+                // This is just a placeholder for demonstration
+                // A real refactoring tool would analyze and transform the code
+                const languageName = language === 'auto' ? 'auto-detected' : language;
+                
+                return `// Refactored code (${languageName})
+// This is a simulation - a real tool would provide actual refactoring
+
+${code}
+
+// Refactoring completed
+// Code has been optimized for readability and maintainability`;
+            }
+            downloadSample.addEventListener('click', function(){
+                const sample = `function greet(name){\n  return ` + "`Hello ${name}!`" + `\n}\n\nconsole.log(greet('World'))`;
+                const blob = new Blob([sample], {type: 'text/plain'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'sample.js'; document.body.appendChild(a); a.click(); a.remove();
+                URL.revokeObjectURL(url);
+            });
+
+            // micro interaction: pulse element
+            function showPulse(el){
+                el.animate([{ boxShadow: '0 0 0px rgba(0,240,255,0.18)' }, { boxShadow: '0 0 24px rgba(0,240,255,0.18)' }, { boxShadow: '0 0 0px rgba(0,240,255,0.18)' }], { duration: 700 });
+            }
+        });
+    </script>
+</body>
+</html>
