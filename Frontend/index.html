@@ -385,12 +385,12 @@
             const codeOutput = document.querySelector('.code-output');
             const copyBtn = document.querySelector('.copy-btn');
             
-            // Handle file upload
+           
             fileInput.addEventListener('change', function() {
                 if (this.files.length > 0) {
                     fileName.textContent = this.files[0].name;
                     
-                    // Try to detect language from file extension
+                    
                     const extension = this.files[0].name.split('.').pop().toLowerCase();
                     detectLanguageFromExtension(extension);
                     
@@ -404,7 +404,7 @@
                 }
             });
             
-            // Detect language from file extension
+            
             function detectLanguageFromExtension(ext) {
                 const languageMap = {
                     'js': 'javascript',
@@ -426,7 +426,7 @@
                 }
             }
             
-            // Handle refactor button click
+           
             refactorBtn.addEventListener('click', function() {
                 const code = codeInput.value.trim();
                 const language = languageSelect.value;
@@ -436,25 +436,25 @@
                     return;
                 }
                 
-                // Show loading state
+                
                 refactorBtn.disabled = true;
                 refactorBtn.innerHTML = `
                     <i class="fas fa-spinner spinner"></i>
                     Refactoring...
                 `;
                 
-                // Simulate processing delay
+                
                 setTimeout(() => {
-                    // This is a simple simulation - in reality, you would have actual refactoring logic
+                   
                     const refactoredCode = simulateRefactoring(code, language);
                     
                     codeOutput.textContent = refactoredCode;
                     outputSection.style.display = 'block';
                     
-                    // Scroll to output
+                   
                     outputSection.scrollIntoView({ behavior: 'smooth' });
                     
-                    // Reset button
+                   
                     refactorBtn.disabled = false;
                     refactorBtn.innerHTML = `
                         <i class="fas fa-magic"></i>
@@ -463,7 +463,7 @@
                 }, 1500);
             });
             
-            // Handle copy button click
+           
             copyBtn.addEventListener('click', function() {
                 const textToCopy = codeOutput.textContent;
                 
@@ -474,7 +474,7 @@
                 
                 navigator.clipboard.writeText(textToCopy)
                     .then(() => {
-                        // Visual feedback
+                        
                         const originalText = copyBtn.innerHTML;
                         copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
                         copyBtn.style.backgroundColor = '#2ecc71';
@@ -490,10 +490,9 @@
                     });
             });
             
-            // Simple simulation of refactoring - in reality this would be much more complex
+            
             function simulateRefactoring(code, language) {
-                // This is just a placeholder for demonstration
-                // A real refactoring tool would analyze and transform the code
+              
                 const languageName = language === 'auto' ? 'auto-detected' : language;
                 
                 return `// Refactored code (${languageName})
@@ -513,7 +512,7 @@ ${code}
                 URL.revokeObjectURL(url);
             });
 
-            // micro interaction: pulse element
+            
             function showPulse(el){
                 el.animate([{ boxShadow: '0 0 0px rgba(0,240,255,0.18)' }, { boxShadow: '0 0 24px rgba(0,240,255,0.18)' }, { boxShadow: '0 0 0px rgba(0,240,255,0.18)' }], { duration: 700 });
             }
