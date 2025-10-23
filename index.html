@@ -14,35 +14,79 @@
         }
         
         :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --secondary: #7209b7;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --gray: #6c757d;
-            --success: #4cc9f0;
-            --border: #e1e8ed;
-            --shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            /* Technical Color Scheme - Dark theme with developer vibes */
+            --primary: #0ea5e9;
+            --primary-dark: #0284c7;
+            --secondary: #8b5cf6;
+            --accent: #10b981;
+            --bg-main: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border: #334155;
+            --shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
-            color: var(--dark);
+            background: var(--bg-main);
+            color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
             padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
         
+        .layout {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Left Sidebar - Explanation Panel */
+        .explanation-panel {
+            width: 300px;
+            background-color: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        
+        .explanation-panel h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .explanation-section {
+            margin-bottom: 20px;
+        }
+        
+        .explanation-section h4 {
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .explanation-section p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        /* Main Container */
         .container {
-            width: 100%;
-            max-width: 1000px;
-            background-color: white;
+            flex: 1;
+            background-color: var(--bg-secondary);
             border-radius: 12px;
             box-shadow: var(--shadow);
             overflow: hidden;
+            border: 1px solid var(--border);
         }
         
         header {
@@ -67,6 +111,41 @@
             padding: 30px;
         }
         
+        /* Try Me Button Section */
+        .try-me-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: var(--bg-main);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .try-me-section p {
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+        
+        .try-me-btn {
+            background: linear-gradient(120deg, var(--secondary), var(--primary));
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .try-me-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+        
         .input-section {
             margin-bottom: 25px;
         }
@@ -88,16 +167,16 @@
         
         .language-selector label {
             font-weight: 600;
-            color: var(--dark);
+            color: var(--text-secondary);
         }
         
         select {
             padding: 8px 12px;
             border: 1px solid var(--border);
             border-radius: 6px;
-            background-color: white;
+            background-color: var(--bg-tertiary);
             font-size: 14px;
-            color: var(--dark);
+            color: var(--text-primary);
             cursor: pointer;
             transition: border-color 0.3s;
         }
@@ -105,7 +184,7 @@
         select:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
         }
         
         .code-input {
@@ -117,15 +196,16 @@
             font-family: 'Courier New', monospace;
             font-size: 15px;
             resize: vertical;
-            background-color: #fafbfc;
+            background-color: var(--bg-main);
             transition: border-color 0.3s;
             line-height: 1.5;
+            color: var(--text-primary);
         }
         
         .code-input:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
         }
         
         .file-upload {
@@ -137,8 +217,8 @@
         }
         
         .file-label {
-            background-color: var(--primary);
-            color: white;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
             padding: 10px 20px;
             border-radius: 6px;
             cursor: pointer;
@@ -147,10 +227,12 @@
             align-items: center;
             gap: 8px;
             font-weight: 500;
+            border: 1px solid var(--border);
         }
         
         .file-label:hover {
-            background-color: var(--primary-dark);
+            background-color: var(--bg-main);
+            border-color: var(--primary);
         }
         
         .file-input {
@@ -158,7 +240,7 @@
         }
         
         .file-name {
-            color: var(--gray);
+            color: var(--text-muted);
             font-style: italic;
         }
         
@@ -172,7 +254,7 @@
         }
         
         .refactor-btn {
-            background: linear-gradient(120deg, var(--primary), var(--secondary));
+            background: linear-gradient(120deg, var(--primary), var(--accent));
             color: white;
             border: none;
             padding: 14px 40px;
@@ -184,12 +266,12 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+            box-shadow: 0 4px 10px rgba(14, 165, 233, 0.3);
         }
         
         .refactor-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+            box-shadow: 0 6px 15px rgba(14, 165, 233, 0.4);
         }
         
         .refactor-btn:active {
@@ -223,12 +305,12 @@
         }
         
         .output-header h2 {
-            color: var(--dark);
+            color: var(--text-primary);
             font-weight: 600;
         }
         
         .copy-btn {
-            background-color: var(--success);
+            background-color: var(--accent);
             color: white;
             border: none;
             padding: 8px 16px;
@@ -242,7 +324,7 @@
         }
         
         .copy-btn:hover {
-            background-color: #3ab0d6;
+            background-color: #059669;
         }
         
         .code-output {
@@ -253,15 +335,16 @@
             border-radius: 8px;
             font-family: 'Courier New', monospace;
             font-size: 15px;
-            background-color: #fafbfc;
+            background-color: var(--bg-main);
             white-space: pre-wrap;
             line-height: 1.5;
+            color: var(--text-primary);
         }
         
         footer {
             text-align: center;
             padding: 20px;
-            color: var(--gray);
+            color: var(--text-muted);
             font-size: 0.9rem;
             border-top: 1px solid var(--border);
         }
@@ -273,6 +356,17 @@
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 1024px) {
+            .layout {
+                flex-direction: column;
+            }
+            
+            .explanation-panel {
+                width: 100%;
+                position: static;
+            }
         }
         
         @media (max-width: 768px) {
@@ -305,73 +399,106 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>NeatCode - Code Refactor Tool</h1>
-            <p class="subtitle">Paste your code or upload a file to refactor</p>
-        </header>
+    <div class="layout">
+        <!-- Left Side: Explanation Panel -->
+        <aside class="explanation-panel">
+            <h3><i class="fas fa-info-circle"></i> How It Works</h3>
+            
+            <div class="explanation-section">
+                <h4>1. Code Analysis</h4>
+                <p>Our tool analyzes your code to identify patterns, inefficiencies, and areas for improvement.</p>
+            </div>
+            
+            <div class="explanation-section">
+                <h4>2. Smart Refactoring</h4>
+                <p>Applies best practices and modern coding standards to optimize your code structure.</p>
+            </div>
+            
+            <div class="explanation-section">
+                <h4>3. Quality Check</h4>
+                <p>Validates the refactored code to ensure it maintains functionality while improving readability.</p>
+            </div>
+            
+            <div class="explanation-section">
+                <h4>4. Get Results</h4>
+                <p>Review your improved code with better naming, structure, and documentation.</p>
+            </div>
+        </aside>
         
-        <div class="main-content">
-            <div class="input-section">
-                <div class="input-header">
-                    <h2>Input Code</h2>
-                    <div class="language-selector">
-                        <label for="language-select"><i class="fas fa-code"></i> Language:</label>
-                        <select id="language-select">
-                            <option value="auto">Auto-detect</option>
-                            <option value="javascript">JavaScript</option>
-                            <option value="python">Python</option>
-                            <option value="java">Java</option>
-                            <option value="cpp">C++</option>
-                            <option value="csharp">C#</option>
-                            <option value="php">PHP</option>
-                            <option value="html">HTML</option>
-                            <option value="css">CSS</option>
-                            <option value="sql">SQL</option>
-                            <option value="ruby">Ruby</option>
-                            <option value="swift">Swift</option>
-                        </select>
+        <!-- Right Side: Main Content -->
+        <div class="container">
+            <header>
+                <h1>NeatCode - Code Refactor Tool</h1>
+                <p class="subtitle">Paste your code or upload a file to refactor</p>
+            </header>
+            
+            <div class="main-content">
+                <!-- Try Me Section -->
+                <div class="try-me-section">
+                    <p><i class="fas fa-lightbulb"></i> <strong>Try it out:</strong> Click the button below to load a sample JavaScript code</p>
+                    <button class="try-me-btn" id="tryMeBtn">
+                        <i class="fas fa-play"></i>
+                        Try Me - Load Sample Code
+                    </button>
+                </div>
+                
+                <div class="input-section">
+                    <div class="input-header">
+                        <h2>Input Code</h2>
+                        <div class="language-selector">
+                            <label for="language-select"><i class="fas fa-code"></i> Language:</label>
+                            <select id="language-select">
+                                <option value="auto">Auto-detect</option>
+                                <option value="javascript">JavaScript</option>
+                                <option value="python">Python</option>
+                                <option value="java">Java</option>
+                                <option value="cpp">C++</option>
+                                <option value="csharp">C#</option>
+                                <option value="php">PHP</option>
+                                <option value="html">HTML</option>
+                                <option value="css">CSS</option>
+                                <option value="sql">SQL</option>
+                                <option value="ruby">Ruby</option>
+                                <option value="swift">Swift</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <textarea class="code-input" placeholder="Paste your code here..."></textarea>
+                    
+                    <div class="file-upload">
+                        <label for="file-input" class="file-label">
+                            <i class="fas fa-file-upload"></i>
+                            Upload Code File
+                        </label>
+                        <input type="file" id="file-input" class="file-input" accept=".txt,.js,.py,.java,.cpp,.c,.cs,.php,.html,.css,.json,.xml,.rb,.swift">
+                        <span class="file-name">No file selected</span>
                     </div>
                 </div>
                 
-                <textarea class="code-input" placeholder="Paste your code here..."></textarea>
-                
-                <div class="file-upload">
-                    <label for="file-input" class="file-label">
-                        <i class="fas fa-file-upload"></i>
-                        Upload Code File
-                    </label>
-                    <input type="file" id="file-input" class="file-input" accept=".txt,.js,.py,.java,.cpp,.c,.cs,.php,.html,.css,.json,.xml,.rb,.swift">
-                    <span class="file-name">No file selected</span>
+                <div class="actions">
+                    <button class="refactor-btn">
+                        <i class="fas fa-magic"></i>
+                        Refactor Code
+                    </button>
+                </div>
+
+                <div class="output-section">
+                    <div class="output-header">
+                        <h2>Refactored Code</h2>
+                        <button class="copy-btn">
+                            <i class="far fa-copy"></i>
+                            Copy to Clipboard
+                        </button>
+                    </div>
+                    <div class="code-output"></div>
                 </div>
             </div>
             
-            <div class="actions">
-                <button class="refactor-btn">
-                    <i class="fas fa-magic"></i>
-                    Refactor Code
-                </button>
-                <button class="download-btn" id="downloadSample">
-                    <i class="fas fa-download"></i>
-                    Download Sample
-                </button>
-            </div>
-
-            <div class="output-section">
-                <div class="output-header">
-                    <h2>Refactored Code</h2>
-                    <button class="copy-btn">
-                        <i class="far fa-copy"></i>
-                        Copy to Clipboard
-                    </button>
-                </div>
-                <div class="code-output"></div>
-            </div>
+            <footer>
+                <p>NeatCode - Code Refactor Tool &copy; 2025 | Clean, efficient, and beautiful code refactoring</p>
+            </footer>
         </div>
-        
-        <footer>
-            <p>NeatCode - Code Refactor Tool &copy; 2025 | Clean, efficient, and beautiful code refactoring</p>
-        </footer>
     </div>
 
     <script>
@@ -384,6 +511,39 @@
             const outputSection = document.querySelector('.output-section');
             const codeOutput = document.querySelector('.code-output');
             const copyBtn = document.querySelector('.copy-btn');
+            const tryMeBtn = document.getElementById('tryMeBtn');
+            
+            // Sample code for Try Me button
+            const sampleCode = `function calculateTotal(items) {
+    var total = 0;
+    for (var i = 0; i < items.length; i++) {
+        total = total + items[i].price;
+    }
+    return total;
+}
+
+var items = [
+    {name: 'Apple', price: 1.50},
+    {name: 'Banana', price: 0.75},
+    {name: 'Orange', price: 2.00}
+];
+
+console.log('Total: $' + calculateTotal(items));`;
+            
+            // Try Me button functionality
+            tryMeBtn.addEventListener('click', function() {
+                codeInput.value = sampleCode;
+                languageSelect.value = 'javascript';
+                
+                // Visual feedback
+                codeInput.style.borderColor = 'var(--primary)';
+                setTimeout(() => {
+                    codeInput.style.borderColor = '';
+                }, 1000);
+                
+                // Scroll to input
+                codeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
             
             // Handle file upload
             fileInput.addEventListener('change', function() {
@@ -445,7 +605,6 @@
                 
                 // Simulate processing delay
                 setTimeout(() => {
-                    // This is a simple simulation - in reality, you would have actual refactoring logic
                     const refactoredCode = simulateRefactoring(code, language);
                     
                     codeOutput.textContent = refactoredCode;
@@ -477,7 +636,7 @@
                         // Visual feedback
                         const originalText = copyBtn.innerHTML;
                         copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                        copyBtn.style.backgroundColor = '#2ecc71';
+                        copyBtn.style.backgroundColor = '#10b981';
                         
                         setTimeout(() => {
                             copyBtn.innerHTML = originalText;
@@ -490,10 +649,8 @@
                     });
             });
             
-            // Simple simulation of refactoring - in reality this would be much more complex
+            // Simple simulation of refactoring
             function simulateRefactoring(code, language) {
-                // This is just a placeholder for demonstration
-                // A real refactoring tool would analyze and transform the code
                 const languageName = language === 'auto' ? 'auto-detected' : language;
                 
                 return `// Refactored code (${languageName})
@@ -503,19 +660,6 @@ ${code}
 
 // Refactoring completed
 // Code has been optimized for readability and maintainability`;
-            }
-            downloadSample.addEventListener('click', function(){
-                const sample = `function greet(name){\n  return ` + "`Hello ${name}!`" + `\n}\n\nconsole.log(greet('World'))`;
-                const blob = new Blob([sample], {type: 'text/plain'});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = 'sample.js'; document.body.appendChild(a); a.click(); a.remove();
-                URL.revokeObjectURL(url);
-            });
-
-            // micro interaction: pulse element
-            function showPulse(el){
-                el.animate([{ boxShadow: '0 0 0px rgba(0,240,255,0.18)' }, { boxShadow: '0 0 24px rgba(0,240,255,0.18)' }, { boxShadow: '0 0 0px rgba(0,240,255,0.18)' }], { duration: 700 });
             }
         });
     </script>
