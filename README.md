@@ -111,8 +111,7 @@ This is a class project. Team members should:
 ## Notes
 
 - Keep your API key secure - never commit .env file
-- Supported file types: .py, .js, .java, .cpp, .c, .txt
-- Maximum file size: 16MB
+- Supported file types: .txt,.js,.py,.java,.cpp,.c,.cs,.php,.html,.css,.json,.xml,.rb,.swift
 
 ## License
 
