@@ -1,141 +1,178 @@
-# app.py
-import os, json, re
-from typing import Optional
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+import os
+from datetime import datetime
+from pathlib import Path
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from werkzeug.utils import secure_filename
+
 import google.generativeai as genai
+from dotenv import load_dotenv
 
-# ------------- Load .env -------------
+# -------------------------------------------------------------------
+# Environment & configuration
+# -------------------------------------------------------------------
 
-# This lets you keep GEMINI_API_KEY and FRONTEND_ORIGIN in a .env file
-# in the same folder as app.py.
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent
+UPLOAD_DIR = BASE_DIR.parent / "uploads"
 
-# ------------- Configure -------------
+load_dotenv(BASE_DIR / ".env")
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# Loads the server port from the environment, defaulting to 5000 if none is set
+PORT = int(os.getenv("PORT", "5000"))
+# Host address that tells Flask to listen on all available network interfaces
+HOST = "0.0.0.0"
+
+if not GEMINI_API_KEY:
+    raise RuntimeError("GEMINI_API_KEY is not set. Add it to Backend/.env "
+                       "as GEMINI_API_KEY=your_api_key_here")
+
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Use any Gemini model
 MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")
+model = genai.GenerativeModel(MODEL_NAME)
 
-# Mock when there is no key OR when using a demo/placeholder key
-MOCK_MODE = False
-if not GEMINI_API_KEY or GEMINI_API_KEY.startswith("sk-demo-not-"):
-    MOCK_MODE = True
-    print("MOCK_MODE =", MOCK_MODE)
-else:
-    genai.configure(api_key=GEMINI_API_KEY)
+# -------------------------------------------------------------------
+# Flask app
+# -------------------------------------------------------------------
 
-app = FastAPI(title="NeatCode Backend", version="1.0.0")
+app = Flask(__name__)
+CORS(app)  # allow requests from localhost:3000
 
-# In CORS, the FRONTEND_ORIGIN refers to where the page is hosted, defined by
-# its scheme, host, and port (without the path). For example, http://localhost:5500
-# and http://127.0.0.1:5500 count as two distinct origins even though they reach
-# the same machine. In local development, backends often allow both origins so
-# requests succeed whether the page is loaded via localhost or 127.0.0.1 on
-# the same port.
-FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://127.0.0.1:5500")
+# Ensure uploads directory exists
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-ALLOWED_ORIGINS = [
-    FRONTEND_ORIGIN,
-    "http://localhost:5500",
-    "http://127.0.0.1:5500",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ------------- Models -------------
-class RefactorRequest(BaseModel):
-    code: str
-    language: Optional[str] = "auto"
+ALLOWED_EXTENSIONS = { "txt", "js", "py", "java", "cpp", "c", "cs", "php", "html", "css",
+                       "json", "xml", "rb", "swift"}
 
 
-class RefactorResponse(BaseModel):
-    refactored_code: str
-    explanation: str
+def allowed_file(filename: str) -> bool:
+    """Returns True if the filename has an allowed extension, otherwise False."""
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# ------------- Routes -------------
-@app.get("/api/health")
-def health():
-    return {"ok": True}
+# -------------------------------------------------------------------
+# Helper: call Gemini to refactor code
+# -------------------------------------------------------------------
 
-
-@app.post("/api/refactor", response_model=RefactorResponse)
-def refactor(req: RefactorRequest):
-    if not req.code.strip():
-        raise HTTPException(status_code=400, detail="Empty code.")
-    return _call_gemini(req.code, req.language or "auto")
-
-
-# ------------- Provider call -------------
-def _call_gemini(code: str, language: str) -> RefactorResponse:
-    if MOCK_MODE:
-        language_name = language or "auto"
-        return RefactorResponse(
-            refactored_code=(
-                f"// Mock refactor ({language_name})\n"
-                "// Backend is running in mock mode (no GEMINI_API_KEY)\n\n"
-                f"{code}\n\n"
-                "// End of mock refactor"
-            ),
-            explanation=(
-                "Gemini API key is not configured. "
-                "This is a mock response from the backend."
-            ),
-        )
-
-    model = genai.GenerativeModel(MODEL_NAME)
-
-    schema = {
-        "type": "object",
-        "properties": {
-            "refactored_code": {"type": "string"},
-            "explanation": {"type": "string"},
-        },
-        "required": ["refactored_code", "explanation"],
-        "additionalProperties": False,
-    }
+def refactor_with_gemini(code: str, filename: str | None = None) -> dict:
+    """
+    Sends the original code to Gemini and asks for the refactored code as well as an
+    explanation of what changed. It returns a dict with keys: refactored_code, explanation
+    """
+    language_hint = ""
+    if filename and "." in filename:
+        ext = filename.rsplit(".", 1)[1].lower()
+        language_hint = f" (file extension .{ext})"
 
     prompt = f"""
-You are a senior software engineer. Refactor the user's code without changing behavior.
+			You are a senior software engineer helping a student with code refactoring.
+			They have provided the following source code{language_hint}. Your job:
+			1. Refactor and improve readability, structure, and maintainability.
+			2. Fix obvious bugs, but **do not** change the external behavior.
+			3. Apply good naming, modularization, and comments where helpful.
+			4. Keep the same language as the input.
+			
+			Return your answer in **pure JSON** with the following keys:
+			- "refactored_code": the improved version of the code only.
+			- "explanation": a clear bullet-point style explanation of the most important changes.
+			
+			Here is the original code:
+			
+			```code
+			{code}
+			"""
 
-Language: {language}
-Keep public interfaces stable. Prefer idiomatic patterns. Remove duplication, improve naming,
-and add light comments only where helpful. If the code is already clean, keep it mostly unchanged and explain why.
 
-Return ONLY JSON compatible with this schema:
-{json.dumps(schema, indent=2)}
+# -------------------------------------------------------------------
+# Routes
+# -------------------------------------------------------------------
 
-User code: <code>
-{code}
-</code>
-"""
+@app.route("/api/health", methods=["GET"])
+def health_check():
+    """
+    Health check endpoint that confirms the server is running and shows the current model
+    and timestamp.
+    """
+    return jsonify({"status": "ok",
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "model": MODEL_NAME})
+	
+@app.route("/api/refactor", methods=["POST"])
+def refactor_code():
+	"""
+	Handles code sent from the UI as JSON, sends it to Gemini for refactoring, and returns
+	the original code, the improved version, and an explanation of the changes.
+	
+	Expected request JSON:
+	{"code": "string with source code", "filename": "some_filename.ext"}
+	
+	Response:
+	{"originalCode": "...", "refactoredCode": "...", "explanation": "..."}
+	"""
+	data = request.get_json(silent=True) or {}
+	code = data.get("code", "")
+	filename = data.get("filename")
 
-    cfg = genai.GenerationConfig(
-        temperature=0.2,
-        top_p=0.9,
-        candidate_count=1,
-        max_output_tokens=4096,
-        # Newer SDKs may honor this and return raw JSON (no fences). Harmless if ignored.
-        response_mime_type="application/json",
-    )
+	if not code.strip():
+		return jsonify({"error": "No code provided"}), 400
 
-    resp = model.generate_content(prompt, generation_config=cfg)
-    text = (resp.text or "").strip()
-    # Strip accidental ```json fences if the model adds them
-    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
+	try:
+		gemini_result = refactor_with_gemini(code, filename)
+		return jsonify({"originalCode": code,
+		                "refactoredCode": gemini_result["refactored_code"],
+		                "explanation": gemini_result["explanation"],})
+	except Exception as e:
+		# Log server-side in real app; here we just return a safe error
+		return jsonify({"error": "Failed to refactor code with Gemini.",
+		                "details": str(e)}), 500
+    
+@app.route("/api/refactor-file", methods=["POST"])
+def refactor_file():
+	"""
+	Handles file uploads from the client, sends the uploaded code file to Gemini for
+	refactoring, and returns the refactored code and explanation in the same JSON format
+	as /api/refactor.
+	"""
+	if "file" not in request.files:
+		return jsonify({"error": "No file part in request"}), 400
+	
+	file = request.files["file"]
+	
+	if file.filename == "":
+		return jsonify({"error": "No selected file"}), 400
+	
+	if not allowed_file(file.filename):
+		return jsonify({"error": "Unsupported file type"}), 400
+	
+	filename = secure_filename(file.filename)
+	save_path = UPLOAD_DIR / filename
+	file_contents = file.read().decode("utf-8", errors="replace")
+	
+	# Optionally save the original file for audit/history
+	with open(save_path, "w", encoding="utf-8") as f:
+		f.write(file_contents)
+	
+	if not file_contents.strip():
+		return jsonify({"error": "Uploaded file is empty"}), 400
+	
+	try:
+		gemini_result = refactor_with_gemini(file_contents, filename)
+		return jsonify({"filename": filename,
+		                "originalCode": file_contents,
+		                "refactoredCode": gemini_result["refactored_code"],
+		                "explanation": gemini_result["explanation"],})
+	except Exception as e:
+		return jsonify({"error": "Failed to refactor uploaded file with Gemini.",
+		                "details": str(e)}), 500
 
-    try:
-        data = json.loads(text)
-        return RefactorResponse(**data)
-    except Exception as e:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Provider returned unexpected format: {e}. Snippet: {text[:400]}",
-        )
+
+# -------------------------------------------------------------------
+# Main entrypoint
+# -------------------------------------------------------------------
+
+if name == "main":
+# Starts the Flask development server using the chosen host, port, and debug mode
+app.run(host=HOST, port=PORT, debug=True)  
