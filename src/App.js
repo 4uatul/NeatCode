@@ -43,51 +43,87 @@ function App() {
   const [isRefactoring, setIsRefactoring] = useState(false);
   const [showOutput, setShowOutput] = useState(false);
 
-  const sampleCode = `function calculateTotal(items) {
-    var total = 0;
-    for (var i = 0; i < items.length; i++) {
-        total = total + items[i].price;
+  const sampleCode = `// Bad code example - needs refactoring!
+function calc(x) {
+    var t = 0;
+    var i = 0;
+    while (i < x.length) {
+        if (x[i].p) {
+            t = t + x[i].p;
+        }
+        i = i + 1;
     }
-    return total;
+    return t;
 }
 
-var items = [
-    {name: 'Apple', price: 1.50},
-    {name: 'Banana', price: 0.75},
-    {name: 'Orange', price: 2.00}
+function d(amt) {
+    var disc = 0;
+    if (amt > 100) {
+        disc = amt * 0.2;
+    } else if (amt > 50) {
+        disc = amt * 0.1;
+    } else {
+        disc = 0;
+    }
+    return disc;
+}
+
+var stuff = [
+    {n: 'laptop', p: 999.99, q: 1},
+    {n: 'mouse', p: 25.50, q: 2},
+    {n: 'keyboard', p: 75.00, q: 1}
 ];
 
-console.log('Total: $' + calculateTotal(items));`;
+var x = calc(stuff);
+var y = d(x);
+var z = x - y;
+
+console.log('Total: ' + x);
+console.log('Discount: ' + y);
+console.log('Final: ' + z);`;
 
   const handleTryMe = () => {
     setCode(sampleCode);
     setLanguage('javascript');
   };
 
-  const handleRefactor = () => {
+  const handleRefactor = async () => {
     const trimmedCode = code.trim();
-    
+
     if (trimmedCode === '') {
       alert('Please enter or upload some code to refactor.');
       return;
     }
-    
+
     setIsRefactoring(true);
-    
-    setTimeout(() => {
-      const languageName = language === 'auto' ? 'auto-detected' : language;
-      const result = `// Refactored code (${languageName})
-// This is a simulation - a real tool would provide actual refactoring
 
-${code}
+    try {
+      const response = await fetch('http://localhost:5000/api/refactor', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code: trimmedCode })
+      });
 
-// Refactoring completed
-// Code has been optimized for readability and maintainability`;
-      
-      setRefactoredCode(result);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error + (data.details ? ': ' + data.details : ''));
+      }
+
+      setRefactoredCode(data.refactoredCode || 'No refactored code returned');
       setShowOutput(true);
+    } catch (error) {
+      console.error('Error refactoring code:', error);
+      alert(`Failed to refactor code: ${error.message}\n\nMake sure the backend server is running on http://localhost:5000`);
+    } finally {
       setIsRefactoring(false);
-    }, 1500);
+    }
   };
 
   const copyToClipboard = () => {
