@@ -1,3 +1,4 @@
+import code
 import os
 import json
 from datetime import datetime
@@ -44,26 +45,41 @@ def refactor_with_gemini(code: str, filename: Optional[str] = None) -> dict:
         ext = filename.rsplit(".", 1)[1].lower()
         language_hint = f" (file extension .{ext})"
 
-    prompt = f"""You are a senior software engineer helping a student with code refactoring.
-They have provided the following source code {language_hint}. Your job:
-1. Refactor and improve readability, structure, and maintainability.
-2. Fix obvious bugs, but do not change the external behavior.
-3. Apply good naming, modularization, and comments where helpful.
-4. Keep the same language as the input.
+    prompt = f"""You are a code refactoring assistant. Analyze and refactor the following {language_hint} code.
 
-Return your answer in pure JSON with the following keys:
-- "refactored_code": the improved version of the code only.
-- "explanation": a clear bullet-point style explanation of the most important changes.
+IMPORTANT: You MUST respond with ONLY a valid JSON object. Do not include any markdown, code blocks, or explanatory text outside the JSON.
 
-Here is the original code:
-
-```code
+Code to refactor:
+```
 {code}
 ```
-"""
+
+You MUST return a JSON object with exactly these three fields:
+
+1. "project_summary" - A brief 2-3 sentence description of what this code does
+2. "refactored_code" - The improved version of the code
+3. "key_changes" - An array of objects, each with "change" and "reason" fields
+
+Example response format:
+{{
+  "project_summary": "This code calculates the total price of items in a shopping cart with discount logic.",
+  "refactored_code": "function calculateTotal(items) {{\\n  return items.reduce((sum, item) => sum + item.price, 0);\\n}}",
+  "key_changes": [
+    {{"change": "Renamed variable 'x' to 'items'", "reason": "Descriptive names improve code readability"}},
+    {{"change": "Used reduce instead of for loop", "reason": "More functional and concise approach"}}
+  ]
+}}
+
+Now refactor the code above and return your response as JSON only."""
 
     response = model.generate_content(prompt)
     response_text = response.text.strip()
+
+    # Debug: Print what Gemini actually returned
+    print("=" * 50)
+    print("RAW GEMINI RESPONSE:")
+    print(response_text)
+    print("=" * 50)
 
     # Remove markdown code blocks if present
     if response_text.startswith("```json"):
@@ -73,7 +89,15 @@ Here is the original code:
     if response_text.endswith("```"):
         response_text = response_text[:-3]
 
-    result = json.loads(response_text.strip())
+    response_text = response_text.strip()
+
+    # Debug: Print cleaned response
+    print("CLEANED RESPONSE:")
+    print(response_text)
+    print("=" * 50)
+
+    result = json.loads(response_text)
+    # ----------------------------
     return result
 
 @app.route("/", methods=["GET"])
@@ -106,7 +130,8 @@ def refactor_code():
         return jsonify({
             "originalCode": code,
             "refactoredCode": gemini_result["refactored_code"],
-            "explanation": gemini_result["explanation"]
+            "projectSummary": gemini_result["project_summary"],
+            "keyChanges": gemini_result["key_changes"]
         })
     except Exception as e:
         import traceback
@@ -143,10 +168,10 @@ def refactor_file():
     try:
         gemini_result = refactor_with_gemini(file_contents, filename)
         return jsonify({
-            "filename": filename,
-            "originalCode": file_contents,
-            "refactoredCode": gemini_result["refactored_code"],
-            "explanation": gemini_result["explanation"]
+            "original_code": code,
+            "refactored_code": gemini_result["refactored_code"],
+            "project_summary": gemini_result["project_summary"],
+            "key_changes": gemini_result["key_changes"]
         })
     except Exception as e:
         return jsonify({

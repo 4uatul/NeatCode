@@ -1,37 +1,34 @@
 import React, { useState } from 'react';
 import './styles/App.css';
 
-// Simple inline components to avoid import issues
-const ExplanationPanel = () => {
+const Header = () => {
   return (
-    <aside className="explanation-panel">
-      <h3><i className="fas fa-info-circle"></i> How It Works</h3>
-      <div className="explanation-section">
-        <h4>1. Code Analysis</h4>
-        <p>Our tool analyzes your code to identify patterns, inefficiencies, and areas for improvement.</p>
-      </div>
-      <div className="explanation-section">
-        <h4>2. Smart Refactoring</h4>
-        <p>Applies best practices and modern coding standards to optimize your code structure.</p>
-      </div>
-      <div className="explanation-section">
-        <h4>3. Quality Check</h4>
-        <p>Validates the refactored code to ensure it maintains functionality while improving readability.</p>
-      </div>
-      <div className="explanation-section">
-        <h4>4. Get Results</h4>
-        <p>Review your improved code with better naming, structure, and documentation.</p>
-      </div>
-    </aside>
+    <header className="main-header">
+      <h1>NeatCode - Code Refactor Tool</h1>
+      <p className="subtitle">AI-powered code refactoring for cleaner, better code</p>
+    </header>
   );
 };
 
-const Header = () => {
+const HowItWorksSection = () => {
   return (
-    <header>
-      <h1>NeatCode - Code Refactor Tool</h1>
-      <p className="subtitle">Paste your code or upload a file to refactor</p>
-    </header>
+    <section className="how-it-works">
+      <h3><i className="fas fa-info-circle"></i> How It Works?</h3>
+      <div className="steps-container">
+        <div className="step-card">
+          <p>Paste messy code or drop a file</p>
+        </div>
+        <div className="step-arrow">→</div>
+        <div className="step-card">
+          <p>Gemini AI refactors it instantly</p>
+        </div>
+        <div className="step-arrow">→</div>
+        <div className="step-card">
+          <p>Get cleaner, readable code</p>
+        </div>
+      </div>
+      <p className="cta-text">New here? Click "Try Me - Load Sample Code" to see the magic happen!</p>
+    </section>
   );
 };
 
@@ -40,6 +37,8 @@ function App() {
   const [language, setLanguage] = useState('auto');
   const [fileName, setFileName] = useState('No file selected');
   const [refactoredCode, setRefactoredCode] = useState('');
+  const [projectSummary, setProjectSummary] = useState('');
+  const [keyChanges, setKeyChanges] = useState([]);
   const [isRefactoring, setIsRefactoring] = useState(false);
   const [showOutput, setShowOutput] = useState(false);
 
@@ -117,6 +116,8 @@ console.log('Final: ' + z);`;
       }
 
       setRefactoredCode(data.refactoredCode || 'No refactored code returned');
+      setProjectSummary(data.projectSummary || '');
+      setKeyChanges(data.keyChanges || []);
       setShowOutput(true);
     } catch (error) {
       console.error('Error refactoring code:', error);
@@ -171,108 +172,112 @@ console.log('Final: ' + z);`;
   };
 
   return (
-    <div className="layout">
-      <ExplanationPanel />
-      
-      <div className="container">
-        <Header />
-        
-        <div className="main-content">
-          <div className="try-me-section">
-            <p><i className="fas fa-lightbulb"></i> <strong>Try it out:</strong> Click the button below to load a sample JavaScript code</p>
+    <div className="app-container">
+      <Header />
+      <HowItWorksSection />
+
+      <div className="split-layout">
+        {/* Left Panel - Input */}
+        <div className="left-panel">
+          <div className="panel-header">
+            <h2><i className="fas fa-code"></i> Input Code</h2>
             <button className="try-me-btn" onClick={handleTryMe}>
               <i className="fas fa-play"></i>
               Try Me - Load Sample Code
             </button>
           </div>
-          
-          <div className="input-section">
-            <div className="input-header">
-              <h2>Input Code</h2>
-              <div className="language-selector">
-                <label htmlFor="language-select"><i className="fas fa-code"></i> Language:</label>
-                <select 
-                  id="language-select" 
-                  value={language} 
-                  onChange={(e) => setLanguage(e.target.value)}
-                >
-                  <option value="auto">Auto-detect</option>
-                  <option value="javascript">JavaScript</option>
-                  <option value="python">Python</option>
-                  <option value="java">Java</option>
-                  <option value="cpp">C++</option>
-                  <option value="csharp">C#</option>
-                  <option value="php">PHP</option>
-                  <option value="html">HTML</option>
-                  <option value="css">CSS</option>
-                  <option value="sql">SQL</option>
-                  <option value="ruby">Ruby</option>
-                  <option value="swift">Swift</option>
-                </select>
-              </div>
-            </div>
-            
-            <textarea 
-              className="code-input" 
-              placeholder="Paste your code here..."
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
+
+          <textarea
+            className="code-input"
+            placeholder="Paste your code here..."
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+          />
+
+          <div className="file-upload">
+            <label htmlFor="file-input" className="file-label">
+              <i className="fas fa-file-upload"></i>
+              Upload File
+            </label>
+            <input
+              type="file"
+              id="file-input"
+              className="file-input"
+              accept=".txt,.js,.py,.java,.cpp,.c,.cs,.php,.html,.css,.json,.xml,.rb,.swift"
+              onChange={handleFileChange}
             />
-            
-            <div className="file-upload">
-              <label htmlFor="file-input" className="file-label">
-                <i className="fas fa-file-upload"></i>
-                Upload Code File
-              </label>
-              <input 
-                type="file" 
-                id="file-input" 
-                className="file-input" 
-                accept=".txt,.js,.py,.java,.cpp,.c,.cs,.php,.html,.css,.json,.xml,.rb,.swift"
-                onChange={handleFileChange}
-              />
-              <span className="file-name">{fileName}</span>
-            </div>
-          </div>
-          
-          <div className="actions">
-            <button 
-              className="refactor-btn" 
-              onClick={handleRefactor}
-              disabled={isRefactoring}
-            >
-              {isRefactoring ? (
-                <>
-                  <i className="fas fa-spinner spinner"></i>
-                  Refactoring...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-magic"></i>
-                  Refactor Code
-                </>
-              )}
-            </button>
+            <span className="file-name">{fileName}</span>
           </div>
 
-          {showOutput && (
-            <div className="output-section">
-              <div className="output-header">
-                <h2>Refactored Code</h2>
-                <button className="copy-btn" onClick={copyToClipboard}>
-                  <i className="far fa-copy"></i>
-                  Copy to Clipboard
-                </button>
-              </div>
+          <button
+            className="refactor-btn"
+            onClick={handleRefactor}
+            disabled={isRefactoring}
+          >
+            {isRefactoring ? (
+              <>
+                <i className="fas fa-spinner spinner"></i>
+                Refactoring...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-magic"></i>
+                Refactor Code
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Right Panel - Output */}
+        <div className="right-panel">
+          <div className="panel-header">
+            <h2><i className="fas fa-check-circle"></i> Refactored Code</h2>
+            {showOutput && (
+              <button className="copy-btn" onClick={copyToClipboard}>
+                <i className="far fa-copy"></i>
+                Copy
+              </button>
+            )}
+          </div>
+
+          {showOutput ? (
+            <div className="output-container">
+              {projectSummary && (
+                <div className="project-summary">
+                  <h3><i className="fas fa-info-circle"></i> Project Summary</h3>
+                  <p>{projectSummary}</p>
+                </div>
+              )}
+
               <div className="code-output">{refactoredCode}</div>
+
+              {keyChanges && keyChanges.length > 0 && (
+                <div className="key-changes">
+                  <h3><i className="fas fa-list-ul"></i> Key Changes</h3>
+                  <ul>
+                    {keyChanges.map((item, index) => (
+                      <li key={index}>
+                        <strong>{item.change}</strong>
+                        <p>{item.reason}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="code-placeholder">
+              <i className="fas fa-arrow-left"></i>
+              <p>Refactored code will appear here</p>
+              <p className="hint">Click "Refactor Code" to see the magic!</p>
             </div>
           )}
         </div>
-        
-        <footer>
-          <p>NeatCode - Code Refactor Tool &copy; 2025 | Clean, efficient, and beautiful code refactoring</p>
-        </footer>
       </div>
+
+      <footer>
+        <p>NeatCode &copy; 2025 | AI-powered code refactoring</p>
+      </footer>
     </div>
   );
 }
