@@ -14,7 +14,7 @@ This application helps developers improve their code by using AI to refactor it.
 
 This is a team project following Agile methodology for a software engineering course.
 
-## Features (In Development)
+## Features
 
 - Text input for code submission
 - File upload capability
