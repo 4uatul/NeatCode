@@ -1,282 +1,384 @@
 import React, { useState } from 'react';
+import emailjs from '@emailjs/browser';
 import './styles/App.css';
 
-const Header = () => {
-  return (
-    <header className="main-header">
-      <h1>NeatCode - Code Refactor Tool</h1>
-      <p className="subtitle">AI-powered code refactoring for cleaner, better code</p>
-    </header>
-  );
+// Replace these with your keys from emailjs.com
+const EMAILJS_SERVICE_ID  = 'service_g8ufu3q';
+const EMAILJS_TEMPLATE_ID = 'template_5dldl2f';
+const EMAILJS_PUBLIC_KEY  = 'tZTiMy7Y4TE_oNjMa';
+
+const Navbar = () => (
+  <nav className="navbar">
+    <div className="navbar-brand">
+      <div className="navbar-logo">
+        <i className="fas fa-code"></i>
+      </div>
+      <span className="navbar-title">Neat<span>Code</span></span>
+    </div>
+    <span className="navbar-badge">Powered by Gemini AI</span>
+  </nav>
+);
+
+const HowItWorks = ({ activeStep }) => (
+  <div className="how-it-works">
+    {[
+      { n: 1, label: 'Paste or upload code' },
+      { n: 2, label: 'Gemini AI refactors it' },
+      { n: 3, label: 'Get clean, readable code' },
+    ].map(({ n, label }, i, arr) => (
+      <React.Fragment key={n}>
+        <div className={`step ${activeStep >= n ? 'step-active' : ''} ${activeStep === n ? 'step-current' : ''}`}>
+          <div className="step-number">
+            {activeStep > n ? <i className="fas fa-check"></i> : n}
+          </div>
+          <div className="step-label">{label}</div>
+        </div>
+        {i < arr.length - 1 && (
+          <div className={`step-connector ${activeStep > n ? 'connector-active' : ''}`} />
+        )}
+      </React.Fragment>
+    ))}
+  </div>
+);
+
+const sampleCode = `# bad code lol
+def c(l):
+ t=0
+ for i in range(len(l)):
+  t=t+l[i]
+ return t
+
+def   chk(x,y,z):
+ if x>0:
+  if y>0:
+   if z>0:
+    return True
+   else:
+    return False
+  else:
+   return False
+ else:
+  return False
+
+MyList=[5,3,8,1,9,2]
+TOTAL=c(MyList)
+print("total is"+str(TOTAL))
+avg=TOTAL/len(MyList)
+print("avg is"+str(avg))`;
+
+const LANGUAGE_MAP = {
+  js: 'javascript', py: 'python', java: 'java', cpp: 'cpp',
+  c: 'cpp', cs: 'csharp', php: 'php', html: 'html',
+  css: 'css', sql: 'sql', rb: 'ruby', swift: 'swift',
 };
 
-const HowItWorksSection = () => {
+function FeedbackBox() {
+  const [name, setName] = useState('');
+  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState('idle'); // idle | sending | sent | error
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!message.trim()) return;
+    setStatus('sending');
+
+    emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      { from_name: name || 'Anonymous', message },
+      EMAILJS_PUBLIC_KEY
+    ).then(() => {
+      setStatus('sent');
+      setName('');
+      setMessage('');
+    }).catch(() => setStatus('error'));
+  };
+
   return (
-    <section className="how-it-works">
-      <h3><i className="fas fa-info-circle"></i> How It Works?</h3>
-      <div className="steps-container">
-        <div className="step-card">
-          <p>Paste messy code or drop a file</p>
+    <section className="feedback-section">
+      <div className="feedback-inner">
+        <div className="feedback-header">
+          <i className="fas fa-comment-dots"></i>
+          <div>
+            <h3>Share your feedback</h3>
+            <p>Help us improve NeatCode</p>
+          </div>
         </div>
-        <div className="step-arrow">→</div>
-        <div className="step-card">
-          <p>Gemini AI refactors it instantly</p>
-        </div>
-        <div className="step-arrow">→</div>
-        <div className="step-card">
-          <p>Get cleaner, readable code</p>
-        </div>
+
+        {status === 'sent' ? (
+          <div className="feedback-success">
+            <i className="fas fa-circle-check"></i>
+            <span>Thanks! Your feedback was sent.</span>
+          </div>
+        ) : (
+          <form className="feedback-form" onSubmit={handleSubmit}>
+            <input
+              className="feedback-input"
+              type="text"
+              placeholder="Your name (optional)"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <textarea
+              className="feedback-textarea"
+              placeholder="What do you think? Bugs, ideas, complaints..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              required
+              rows={3}
+            />
+            {status === 'error' && (
+              <p className="feedback-error">Failed to send. Please try again.</p>
+            )}
+            <button className="btn btn-primary feedback-submit" type="submit" disabled={status === 'sending'}>
+              {status === 'sending'
+                ? <><i className="fas fa-spinner spinner"></i> Sending…</>
+                : <><i className="fas fa-paper-plane"></i> Send Feedback</>}
+            </button>
+          </form>
+        )}
       </div>
-      <p className="cta-text">New here? Click "Try Me - Load Sample Code" to see the magic happen!</p>
     </section>
   );
-};
+}
 
 function App() {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('auto');
-  const [fileName, setFileName] = useState('No file selected');
+  const [fileName, setFileName] = useState('');
   const [refactoredCode, setRefactoredCode] = useState('');
   const [projectSummary, setProjectSummary] = useState('');
   const [keyChanges, setKeyChanges] = useState([]);
   const [isRefactoring, setIsRefactoring] = useState(false);
   const [showOutput, setShowOutput] = useState(false);
-
-  const sampleCode = `// Bad code example - needs refactoring!
-function calc(x) {
-    var t = 0;
-    var i = 0;
-    while (i < x.length) {
-        if (x[i].p) {
-            t = t + x[i].p;
-        }
-        i = i + 1;
-    }
-    return t;
-}
-
-function d(amt) {
-    var disc = 0;
-    if (amt > 100) {
-        disc = amt * 0.2;
-    } else if (amt > 50) {
-        disc = amt * 0.1;
-    } else {
-        disc = 0;
-    }
-    return disc;
-}
-
-var stuff = [
-    {n: 'laptop', p: 999.99, q: 1},
-    {n: 'mouse', p: 25.50, q: 2},
-    {n: 'keyboard', p: 75.00, q: 1}
-];
-
-var x = calc(stuff);
-var y = d(x);
-var z = x - y;
-
-console.log('Total: ' + x);
-console.log('Discount: ' + y);
-console.log('Final: ' + z);`;
+  const [copied, setCopied] = useState(false);
+  const [guardMessage, setGuardMessage] = useState('');
 
   const handleTryMe = () => {
     setCode(sampleCode);
-    setLanguage('javascript');
+    setLanguage('python');
   };
 
   const handleRefactor = async () => {
-    const trimmedCode = code.trim();
-
-    if (trimmedCode === '') {
+    if (!code.trim()) {
       alert('Please enter or upload some code to refactor.');
       return;
     }
 
     setIsRefactoring(true);
-
     try {
       const response = await fetch('http://localhost:5000/api/refactor', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ code: trimmedCode })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.trim() }),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
 
       const data = await response.json();
 
-      if (data.error) {
-        throw new Error(data.error + (data.details ? ': ' + data.details : ''));
+      if (data.notCode) {
+        setGuardMessage(data.message);
+        setShowOutput(false);
+        return;
       }
 
+      if (!response.ok || data.error) throw new Error(data.error + (data.details ? ': ' + data.details : ''));
+
+      setGuardMessage('');
       setRefactoredCode(data.refactoredCode || 'No refactored code returned');
       setProjectSummary(data.projectSummary || '');
       setKeyChanges(data.keyChanges || []);
       setShowOutput(true);
     } catch (error) {
-      console.error('Error refactoring code:', error);
-      alert(`Failed to refactor code: ${error.message}\n\nMake sure the backend server is running on http://localhost:5000`);
+      alert(`Failed to refactor: ${error.message}\n\nMake sure the backend is running on http://localhost:5000`);
     } finally {
       setIsRefactoring(false);
     }
   };
 
   const copyToClipboard = () => {
-    const textToCopy = refactoredCode;
-    
-    if (textToCopy.trim() === '') {
-      alert('No code to copy!');
-      return;
-    }
-    
-    navigator.clipboard.writeText(textToCopy)
-      .then(() => {
-        alert('Code copied to clipboard!');
-      })
-      .catch(err => {
-        console.error('Failed to copy: ', err);
-        alert('Failed to copy code to clipboard');
-      });
+    if (!refactoredCode.trim()) return;
+    navigator.clipboard.writeText(refactoredCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setFileName(file.name);
-      
-      const extension = file.name.split('.').pop().toLowerCase();
-      const languageMap = {
-        'js': 'javascript', 'py': 'python', 'java': 'java', 'cpp': 'cpp',
-        'c': 'cpp', 'cs': 'csharp', 'php': 'php', 'html': 'html',
-        'css': 'css', 'sql': 'sql', 'rb': 'ruby', 'swift': 'swift'
-      };
-      
-      if (languageMap[extension]) {
-        setLanguage(languageMap[extension]);
-      }
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setCode(e.target.result);
-      };
-      reader.readAsText(file);
-    } else {
-      setFileName('No file selected');
-    }
+    const file = e.target.files[0];
+    if (!file) return;
+    setFileName(file.name);
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (LANGUAGE_MAP[ext]) setLanguage(LANGUAGE_MAP[ext]);
+    const reader = new FileReader();
+    reader.onload = (ev) => setCode(ev.target.result);
+    reader.readAsText(file);
   };
 
   return (
     <div className="app-container">
-      <Header />
-      <HowItWorksSection />
+      <Navbar />
 
-      <div className="split-layout">
-        {/* Left Panel - Input */}
-        <div className="left-panel">
+      <section className="hero">
+        <div className="hero-eyebrow">
+          <i className="fas fa-sparkles"></i>
+          AI-Powered Refactoring
+        </div>
+        <h1>Write <span className="gradient-text">cleaner code</span>,<br />effortlessly.</h1>
+        <p>Paste your messy code and let Gemini AI transform it into clean, readable, production-ready code.</p>
+      </section>
+
+      <HowItWorks activeStep={showOutput ? 3 : isRefactoring ? 2 : code.trim() ? 1 : 0} />
+
+      <main className="workspace">
+        {/* ── Input Panel ── */}
+        <div className="panel">
           <div className="panel-header">
-            <h2><i className="fas fa-code"></i> Input Code</h2>
-            <button className="try-me-btn" onClick={handleTryMe}>
-              <i className="fas fa-play"></i>
-              Try Me - Load Sample Code
+            <div className="panel-title">
+              <div className="panel-dots">
+                <div className="panel-dot red"></div>
+                <div className="panel-dot yellow"></div>
+                <div className="panel-dot green"></div>
+              </div>
+              <i className="fas fa-code"></i>
+              Input Code
+            </div>
+            <div className="panel-actions">
+              <select
+                className="lang-select"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+              >
+                <option value="auto">Auto-detect</option>
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="cpp">C++</option>
+                <option value="csharp">C#</option>
+                <option value="php">PHP</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="sql">SQL</option>
+                <option value="ruby">Ruby</option>
+                <option value="swift">Swift</option>
+              </select>
+              <button className="btn-try" onClick={handleTryMe}>
+                <i className="fas fa-play"></i>
+                Try Sample
+              </button>
+            </div>
+          </div>
+
+          <div className="code-editor-wrap">
+            <textarea
+              className="code-textarea"
+              placeholder="// Paste your code here..."
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              spellCheck={false}
+            />
+          </div>
+
+          <div className="panel-footer">
+            <div className="file-upload-area">
+              <label htmlFor="file-input" className="file-upload-btn">
+                <i className="fas fa-folder-open"></i>
+                Open File
+              </label>
+              <input
+                type="file"
+                id="file-input"
+                className="file-input"
+                accept=".txt,.js,.py,.java,.cpp,.c,.cs,.php,.html,.css,.json,.xml,.rb,.swift"
+                onChange={handleFileChange}
+              />
+              {fileName && <span className="file-name-text">{fileName}</span>}
+            </div>
+
+            <button
+              className="btn btn-primary"
+              onClick={handleRefactor}
+              disabled={isRefactoring}
+            >
+              {isRefactoring ? (
+                <><i className="fas fa-spinner spinner"></i> Refactoring…</>
+              ) : (
+                <><i className="fas fa-magic"></i> Refactor Code</>
+              )}
             </button>
           </div>
-
-          <textarea
-            className="code-input"
-            placeholder="Paste your code here..."
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-          />
-
-          <div className="file-upload">
-            <label htmlFor="file-input" className="file-label">
-              <i className="fas fa-file-upload"></i>
-              Upload File
-            </label>
-            <input
-              type="file"
-              id="file-input"
-              className="file-input"
-              accept=".txt,.js,.py,.java,.cpp,.c,.cs,.php,.html,.css,.json,.xml,.rb,.swift"
-              onChange={handleFileChange}
-            />
-            <span className="file-name">{fileName}</span>
-          </div>
-
-          <button
-            className="refactor-btn"
-            onClick={handleRefactor}
-            disabled={isRefactoring}
-          >
-            {isRefactoring ? (
-              <>
-                <i className="fas fa-spinner spinner"></i>
-                Refactoring...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-magic"></i>
-                Refactor Code
-              </>
-            )}
-          </button>
         </div>
 
-        {/* Right Panel - Output */}
-        <div className="right-panel">
+        {/* ── Output Panel ── */}
+        <div className="panel">
           <div className="panel-header">
-            <h2><i className="fas fa-check-circle"></i> Refactored Code</h2>
+            <div className="panel-title">
+              <div className="panel-dots">
+                <div className="panel-dot red"></div>
+                <div className="panel-dot yellow"></div>
+                <div className="panel-dot green"></div>
+              </div>
+              <i className="fas fa-check-circle"></i>
+              Refactored Output
+            </div>
             {showOutput && (
-              <button className="copy-btn" onClick={copyToClipboard}>
-                <i className="far fa-copy"></i>
-                Copy
+              <button className="btn btn-ghost" onClick={copyToClipboard}>
+                <i className={copied ? 'fas fa-check' : 'far fa-copy'}></i>
+                {copied ? 'Copied!' : 'Copy'}
               </button>
             )}
           </div>
 
-          {showOutput ? (
-            <div className="output-container">
+          {guardMessage ? (
+            <div className="guard-message">
+              <div className="guard-icon"><i className="fas fa-triangle-exclamation"></i></div>
+              <p className="guard-title">Not a code input</p>
+              <p className="guard-body">{guardMessage}</p>
+            </div>
+          ) : showOutput ? (
+            <div className="output-content">
               {projectSummary && (
-                <div className="project-summary">
-                  <h3><i className="fas fa-info-circle"></i> Project Summary</h3>
+                <div className="summary-banner">
+                  <i className="fas fa-info-circle"></i>
                   <p>{projectSummary}</p>
                 </div>
               )}
 
               <div className="code-output">{refactoredCode}</div>
 
-              {keyChanges && keyChanges.length > 0 && (
+              {keyChanges.length > 0 && (
                 <div className="key-changes">
-                  <h3><i className="fas fa-list-ul"></i> Key Changes</h3>
-                  <ul>
-                    {keyChanges.map((item, index) => (
-                      <li key={index}>
+                  <div className="key-changes-title">
+                    <i className="fas fa-list-ul"></i>
+                    Key Changes
+                  </div>
+                  {keyChanges.map((item, i) => (
+                    <div className="change-item" key={i}>
+                      <div className="change-dot"></div>
+                      <div className="change-body">
                         <strong>{item.change}</strong>
                         <p>{item.reason}</p>
-                      </li>
-                    ))}
-                  </ul>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           ) : (
-            <div className="code-placeholder">
-              <i className="fas fa-arrow-left"></i>
+            <div className="output-placeholder">
+              <div className="placeholder-icon">
+                <i className="fas fa-wand-magic-sparkles"></i>
+              </div>
               <p>Refactored code will appear here</p>
-              <p className="hint">Click "Refactor Code" to see the magic!</p>
+              <span className="hint">Click "Refactor Code" to get started</span>
             </div>
           )}
         </div>
-      </div>
+      </main>
 
-      <footer>
-        <p>NeatCode &copy; 2025 | AI-powered code refactoring</p>
+      <FeedbackBox />
+
+      <footer className="app-footer">
+        NeatCode &copy; 2026 &mdash; AI-powered code refactoring
       </footer>
     </div>
   );

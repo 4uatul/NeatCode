@@ -116,3 +116,31 @@ This is a class project. Team members should:
 ## License
 
 This project is for educational purposes as part of a software engineering course.
+
+
+
+Starting the Application
+1. Backend (Flask API)
+Navigate to the Backend directory and run:
+
+
+cd Backend
+python -m pip install -r requirements.txt
+python app.py
+The backend will start on http://0.0.0.0:5000 (accessible at http://localhost:5000)
+
+2. Frontend (React App)
+In a separate terminal, from the root directory run:
+
+
+npm install
+npm start
+The React app will start on http://localhost:3000
+
+What This Application Does
+This is a code refactoring tool that:
+
+Takes code input (via text or file upload)
+Uses Google's Gemini AI to analyze and refactor the code
+Returns improved code with explanations of changes
+Supports multiple programming languages (JS, Python, Java, C++, etc.)

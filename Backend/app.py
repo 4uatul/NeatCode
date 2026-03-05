@@ -24,7 +24,7 @@ if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY is not set. Add it to Backend/.env")
 
 genai.configure(api_key=GEMINI_API_KEY)
-MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-lite")
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 model = genai.GenerativeModel(MODEL_NAME)
 
 # Flask app setup
@@ -45,32 +45,43 @@ def refactor_with_gemini(code: str, filename: Optional[str] = None) -> dict:
         ext = filename.rsplit(".", 1)[1].lower()
         language_hint = f" (file extension .{ext})"
 
-    prompt = f"""You are a code refactoring assistant. Analyze and refactor the following {language_hint} code.
+    prompt = f"""You are NeatCode, a strict code refactoring tool. Your ONLY job is to refactor code.
 
-IMPORTANT: You MUST respond with ONLY a valid JSON object. Do not include any markdown, code blocks, or explanatory text outside the JSON.
+GUARD RAILS — check this first:
+- If the input is NOT source code (e.g. it's a question, essay, chat message, or random text), do NOT refactor it.
+  Instead return JSON with "not_code": true and a helpful "message" field explaining that NeatCode only refactors code,
+  and suggest what the user should do (e.g. paste actual code, upload a file, try the sample).
+  Example: {{"not_code": true, "message": "It looks like you pasted plain text instead of code. NeatCode only refactors source code. Try pasting a Python, JavaScript, or other code snippet, or click \\"Try Sample\\" to see an example."}}
+
+If the input IS code, refactor it following these RULES exactly:
+- Fix naming: use clear, descriptive names (snake_case for Python, camelCase for JS/Java)
+- Fix formatting and indentation
+- Simplify logic where obviously redundant (e.g. nested ifs that can be flattened)
+- Use idiomatic built-ins where appropriate (e.g. sum(), any(), all())
+- Add minimal inline comments only where the logic is non-obvious — one short comment per logical block, never restate what the code already says clearly
+- Do NOT add extra error handling, validation, or features that weren't in the original
+- Do NOT add type hints unless the original had them
+- Keep the refactored code concise — shorter or same length, never longer
+- Preserve the exact same functionality and output as the original
 
 Code to refactor:
 ```
 {code}
 ```
 
-You MUST return a JSON object with exactly these three fields:
+Respond with ONLY a valid JSON object — no markdown, no code fences, no extra text.
 
-1. "project_summary" - A brief 2-3 sentence description of what this code does
-2. "refactored_code" - The improved version of the code
-3. "key_changes" - An array of objects, each with "change" and "reason" fields
-
-Example response format:
+If it IS code:
 {{
-  "project_summary": "This code calculates the total price of items in a shopping cart with discount logic.",
-  "refactored_code": "function calculateTotal(items) {{\\n  return items.reduce((sum, item) => sum + item.price, 0);\\n}}",
+  "project_summary": "One sentence describing what the code does.",
+  "refactored_code": "the refactored code as a plain string with \\n for newlines",
   "key_changes": [
-    {{"change": "Renamed variable 'x' to 'items'", "reason": "Descriptive names improve code readability"}},
-    {{"change": "Used reduce instead of for loop", "reason": "More functional and concise approach"}}
+    {{"change": "short label", "reason": "one sentence why"}}
   ]
 }}
 
-Now refactor the code above and return your response as JSON only."""
+If it is NOT code:
+{{"not_code": true, "message": "helpful message here"}}"""
 
     response = model.generate_content(prompt)
     response_text = response.text.strip()
@@ -127,6 +138,10 @@ def refactor_code():
 
     try:
         gemini_result = refactor_with_gemini(code, filename)
+
+        if gemini_result.get("not_code"):
+            return jsonify({"notCode": True, "message": gemini_result["message"]}), 422
+
         return jsonify({
             "originalCode": code,
             "refactoredCode": gemini_result["refactored_code"],
