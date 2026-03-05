@@ -1,7 +1,7 @@
 import code
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -24,8 +24,17 @@ if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY is not set. Add it to Backend/.env")
 
 genai.configure(api_key=GEMINI_API_KEY)
-MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-model = genai.GenerativeModel(MODEL_NAME)
+
+# Free-tier model cascade: best quality → fastest/highest quota
+MODEL_CHAIN = [
+    os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),        # primary  — best quality
+    "gemini-2.5-flash-lite",                              # fallback 1
+    "gemini-3-flash-preview",                             # fallback 2
+    "gemini-3.1-flash-lite-preview",                      # fallback 3
+    "gemini-2.0-flash",                                   # fallback 4
+    "gemini-2.0-flash-lite",                              # fallback 5 — highest RPD
+]
+_model_instances = {m: genai.GenerativeModel(m) for m in MODEL_CHAIN}
 
 # Flask app setup
 app = Flask(__name__)
@@ -83,7 +92,22 @@ If it IS code:
 If it is NOT code:
 {{"not_code": true, "message": "helpful message here"}}"""
 
-    response = model.generate_content(prompt)
+    # Try each model in the chain, falling back on quota/rate-limit errors
+    last_error = None
+    response = None
+    for model_name in MODEL_CHAIN:
+        try:
+            response = _model_instances[model_name].generate_content(prompt)
+            print(f"Used model: {model_name}")
+            break
+        except Exception as e:
+            if any(code in str(e) for code in ("429", "quota", "RESOURCE_EXHAUSTED")):
+                print(f"{model_name} quota hit, trying next model...")
+                last_error = e
+            else:
+                raise
+    if response is None:
+        raise last_error
     response_text = response.text.strip()
 
     # Debug: Print what Gemini actually returned
@@ -123,8 +147,8 @@ def home():
 def health_check():
     return jsonify({
         "status": "ok",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "model": MODEL_NAME
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "models": MODEL_CHAIN
     })
 
 @app.route("/api/refactor", methods=["POST"])
